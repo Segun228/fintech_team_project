@@ -1,0 +1,52 @@
+# Системные файлы
+.git/
+.gitignore
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log
+logs/
+
+# Файлы IDE и редакторов
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# Временные файлы
+tmp/
+temp/
+*.tmp
+
+# Файлы окружения (опасно включать в образ!)
+.env
+.env.local
+.env.production
+.env.development
+
+# Документация
+README.pdf
+docs/build/
+
+# Файлы зависимостей
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Docker файлы
+Dockerfile.old
+docker-compose.override.yml
+
+# Резервные копии БД (не включать!)
+*.backup
+*.dump
+*.bak
+backup/
+dumps/
+
+# Библиотеки и зависимости
+vendor/
+packages/
