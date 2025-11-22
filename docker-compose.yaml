@@ -1,5 +1,18 @@
 
 services:
+  db-service:
+    build: 
+      context: .
+      dockerfile: ./db-service/Dockerfile
+    container_name: db-service
+    restart: on-failure
+    environment:
+      POSTGRES_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DBNAME}
+    depends_on:
+      - postgres
+    networks:
+      - app-fintech-network
+
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
     container_name: clickhouse
