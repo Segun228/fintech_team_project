@@ -1,10 +1,10 @@
 CREATE TABLE StockTypes (
-    id INT SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     type_name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE Stocks (
-    id INT SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     stock_type INT NOT NULL,
     ticker VARCHAR(10) UNIQUE NOT NULL,
@@ -12,15 +12,15 @@ CREATE TABLE Stocks (
 );
 
 CREATE TABLE SettlementCurrency (
-    id INT SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     ticker VARCHAR(50) NOT NULL,
     country VARCHAR(50) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE TABLE SavingsAccount (
-    account_number INT SERIAL PRIMARY KEY,
-    bic INT UNIQUE NOT NULL,
+    account_number SERIAL PRIMARY KEY,
+    bic VARCHAR(11) UNIQUE NOT NULL,
     agreement_num INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     main_account_num INT NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE SavingsAccount (
 );
 
 CREATE TABLE UserStock (
-    id INT SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     transact_id INT NOT NULL,
     brock_acc_num INT NOT NULL,
     FOREIGN KEY (transact_id) REFERENCES StockTransactions(id),
@@ -40,7 +40,7 @@ CREATE TABLE UserStock (
 );
 
 CREATE TABLE StockPrices (
-    id INT SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     stock_id INT NOT NULL,
     price NUMERIC(20, 4) NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE StockPrices (
 );
 
 CREATE TABLE StockTransactions (
-    id INT SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     stock_id INT NOT NULL,
     operation_type_id INT NOT NULL,
@@ -61,6 +61,6 @@ CREATE TABLE StockTransactions (
 );
 
 CREATE TABLE StockTransactionTypes (
-    id INT SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     operation_name VARCHAR(255) NOT NULL
 );
