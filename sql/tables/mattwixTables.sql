@@ -1,9 +1,9 @@
-CREATE TABLE StockTypes (
+CREATE TABLE IF NOT EXISTS StockTypes (
     id SERIAL PRIMARY KEY,
     type_name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE Stocks (
+CREATE TABLE IF NOT EXISTS Stocks (
     id SERIAL PRIMARY KEY,
     registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     stock_type INT NOT NULL,
@@ -11,14 +11,14 @@ CREATE TABLE Stocks (
     FOREIGN KEY (stock_type) REFERENCES StockTypes(id)
 );
 
-CREATE TABLE SettlementCurrency (
+CREATE TABLE IF NOT EXISTS SettlementCurrency (
     id SERIAL PRIMARY KEY,
     ticker VARCHAR(50) NOT NULL,
     country VARCHAR(50) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-CREATE TABLE SavingsAccount (
+CREATE TABLE IF NOT EXISTS SavingsAccount (
     account_number SERIAL PRIMARY KEY,
     bic VARCHAR(11) UNIQUE NOT NULL,
     agreement_num INT NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE SavingsAccount (
     FOREIGN KEY (main_account_num) REFERENCES MainAccount(account_number)
 );
 
-CREATE TABLE UserStock (
+CREATE TABLE IF NOT EXISTS UserStock (
     id SERIAL PRIMARY KEY,
     transact_id INT NOT NULL,
     brock_acc_num INT NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE UserStock (
     FOREIGN KEY (brock_acc_num) REFERENCES BrokerageAccount(account_number)
 );
 
-CREATE TABLE StockPrices (
+CREATE TABLE IF NOT EXISTS StockPrices (
     id SERIAL PRIMARY KEY,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     stock_id INT NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE StockPrices (
     FOREIGN KEY (stock_id) REFERENCES Stocks(id)
 );
 
-CREATE TABLE StockTransactions (
+CREATE TABLE IF NOT EXISTS StockTransactions (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     stock_id INT NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE StockTransactions (
     FOREIGN KEY (stock_price_id) REFERENCES StockPrices(id)
 );
 
-CREATE TABLE StockTransactionTypes (
+CREATE TABLE IF NOT EXISTS StockTransactionTypes (
     id SERIAL PRIMARY KEY,
     operation_name VARCHAR(255) NOT NULL
 );

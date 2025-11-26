@@ -1,4 +1,4 @@
-CREATE TABLE Individual (
+CREATE TABLE IF NOT EXISTS Individual (
 	user_id SERIAL PRIMARY KEY ,
 	first_name VARCHAR(255) NOT NULL,
 	surname VARCHAR(255) NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE Individual (
     UNIQUE (passport_series, passport_nums)
 );
 
-CREATE TABLE MainAccount (
+CREATE TABLE IF NOT EXISTS MainAccount (
     account_number SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     BIC INT NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE MainAccount (
     FOREIGN KEY (user_id) REFERENCES Individual(user_id)
 );
 
-CREATE TABLE Transactions (
+CREATE TABLE IF NOT EXISTS Transactions (
     transaction_id SERIAL PRIMARY KEY,
     recipient_acc INT NOT NULL,
     sender_acc INT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE Transactions (
     FOREIGN KEY (comission_id) REFERENCES UserPaymentFee(id)
 );
 
-CREATE TABLE UserPaymentFee (
+CREATE TABLE IF NOT EXISTS UserPaymentFee (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     trans_type INT NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE UserPaymentFee (
     FOREIGN KEY (account_id) REFERENCES MainAccount(account_number)
 );
 
-CREATE TABLE DebutAccount (
+CREATE TABLE IF NOT EXISTS DebutAccount (
     account_number SERIAL PRIMARY KEY,
     BIC INT NOT NULL,
     agreement_num INT NOT NULL,
@@ -65,7 +65,8 @@ CREATE TABLE DebutAccount (
 );
 
 CREATE TYPE resident_status AS ENUM ('resident', 'non-resident');
-CREATE TABLE BockerageAccount (
+
+CREATE TABLE IF NOT EXISTS BockerageAccount (
     account_number SERIAL PRIMARY KEY,
     BIC INT NOT NULL,
     agreement_num INT NOT NULL,
@@ -77,7 +78,7 @@ CREATE TABLE BockerageAccount (
     FOREIGN KEY (main_account_num) REFERENCES MainAccount(account_number)
 );
 
-CREATE TABLE LoanAccount (
+CREATE TABLE IF NOT EXISTS LoanAccount (
     account_number SERIAL PRIMARY KEY,
     BIC INT NOT NULL,
     agreement_num INT NOT NULL,
