@@ -94,3 +94,51 @@ CREATE TABLE IF NOT EXISTS LoanAccount (
     FOREIGN KEY (main_account_num) REFERENCES MainAccount(account_number),
     FOREIGN KEY (currency_id) REFERENCES SettlementCurrency(id)
 );
+
+
+
+CREATE INDEX CONCURRENTLY idx_individual_passport 
+ON Individual(passport_series, passport_nums);
+
+
+CREATE INDEX CONCURRENTLY idx_individual_inn ON Individual(INN);
+CREATE INDEX CONCURRENTLY idx_individual_phone ON Individual(phone_num);
+
+
+CREATE INDEX CONCURRENTLY idx_individual_name 
+ON Individual(surname, first_name, patronymic);
+
+
+CREATE INDEX CONCURRENTLY idx_transactions_sender_date 
+ON Transactions(sender_acc, date_transaction DESC);
+
+
+CREATE INDEX CONCURRENTLY idx_transactions_recipient_date 
+ON Transactions(recipient_acc, date_transaction DESC);
+
+
+CREATE INDEX CONCURRENTLY idx_transactions_date 
+ON Transactions(date_transaction DESC);
+
+CREATE INDEX CONCURRENTLY idx_transactions_type
+ON Transactions(type_id);
+
+CREATE INDEX CONCURRENTLY idx_transactions_type_date 
+ON Transactions(type_id, date_transaction DESC);
+
+
+CREATE INDEX CONCURRENTLY idx_debit_main_account 
+ON DebutAccount(main_account_num);
+
+
+CREATE INDEX CONCURRENTLY idx_brokerage_main_account 
+ON BockerageAccount(main_account_num);
+
+
+CREATE INDEX CONCURRENTLY idx_loan_main_account 
+ON LoanAccount(main_account_num);
+
+
+CREATE INDEX CONCURRENTLY idx_fee_account_type 
+ON UserPaymentFee(account_id, trans_type);
+
