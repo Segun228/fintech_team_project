@@ -65,7 +65,7 @@ CREATE TABLE DebutAccount (
 );
 
 CREATE TYPE resident_status AS ENUM ('resident', 'non-resident');
-CREATE TABLE BickerageAccount (
+CREATE TABLE BockerageAccount (
     account_number SERIAL PRIMARY KEY,
     BIC INT NOT NULL,
     agreement_num INT NOT NULL,
