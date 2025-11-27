@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS SavingsAccount (
     bet INT,
     amount INT,
     FOREIGN KEY (currency_id) REFERENCES UserCurrency(id),
-    FOREIGN KEY (main_account_num) REFERENCES MainAccount(account_number)
+    FOREIGN KEY (main_account_num) REFERENCES MainAccount(id)
 );
 
 CREATE TABLE IF NOT EXISTS UserStock (
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS UserStock (
     transact_id INT NOT NULL,
     brock_acc_num INT NOT NULL,
     FOREIGN KEY (transact_id) REFERENCES StockTransactions(id),
-    FOREIGN KEY (brock_acc_num) REFERENCES BrokerageAccount(account_number)
+    FOREIGN KEY (brock_acc_num) REFERENCES BrokerageAccount(id)
 );
 
 CREATE TABLE IF NOT EXISTS StockPrices (
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS StockTransactions (
     value NUMERIC(20, 4) NOT NULL,
     stock_price_id DECIMAL(10, 3),
     FOREIGN KEY (stock_id) REFERENCES Stocks(id),
-    FOREIGN KEY (account_id) REFERENCES SavingsAccount(account_number),
+    FOREIGN KEY (account_id) REFERENCES SavingsAccount(id),
     FOREIGN KEY (operation_type_id) REFERENCES StockTransactionTypes(id),
     FOREIGN KEY (stock_price_id) REFERENCES StockPrices(id)
 );

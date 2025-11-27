@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS Individual (
-	user_id SERIAL PRIMARY KEY ,
+	id SERIAL PRIMARY KEY ,
 	first_name VARCHAR(255) NOT NULL,
 	surname VARCHAR(255) NOT NULL,
     patronymic VARCHAR(255),
@@ -13,16 +13,16 @@ CREATE TABLE IF NOT EXISTS Individual (
 );
 
 CREATE TABLE IF NOT EXISTS MainAccount (
-    account_number SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    BIC INT NOT NULL,
+    BIC VARCHAR(11) NOT NULL,
     agreement_num INT NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES Individual(user_id)
+    FOREIGN KEY (user_id) REFERENCES Individual(id)
 );
 
 CREATE TABLE IF NOT EXISTS Transactions (
-    transaction_id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     recipient_acc INT NOT NULL,
     sender_acc INT NOT NULL,
     type_id INT NOT NULL,
@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS Transactions (
     comission_id INT,
     amount INT NOT NULL CHECK (amount > 0),
     CHECK (sender_acc != recipient_acc),
-    FOREIGN KEY (recipient_acc) REFERENCES MainAccount(account_number),
-    FOREIGN KEY (sender_acc) REFERENCES MainAccount(account_number),
+    FOREIGN KEY (recipient_acc) REFERENCES MainAccount(id),
+    FOREIGN KEY (sender_acc) REFERENCES MainAccount(id),
     FOREIGN KEY (type_id) REFERENCES TransactionType(id),
     FOREIGN KEY (comission_id) REFERENCES UserPaymentFee(id)
 );
@@ -46,12 +46,12 @@ CREATE TABLE IF NOT EXISTS UserPaymentFee (
     absolute NUMERIC CHECK (absolute >= 0),
     CHECK (ratio > 0 OR absolute > 0),
     FOREIGN KEY (trans_type) REFERENCES TransactionType(id),
-    FOREIGN KEY (account_id) REFERENCES MainAccount(account_number)
+    FOREIGN KEY (account_id) REFERENCES MainAccount(id)
 );
 
 CREATE TABLE IF NOT EXISTS DebutAccount (
-    account_number SERIAL PRIMARY KEY,
-    BIC INT NOT NULL,
+    id SERIAL PRIMARY KEY,
+    BIC VARCHAR(11) NOT NULL,
     agreement_num INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     main_account_num INT NOT NULL,
@@ -60,27 +60,27 @@ CREATE TABLE IF NOT EXISTS DebutAccount (
     card_validity INT NOT NULL,
     CVV INT NOT NULL,
     amount INT DEFAULT 0 CHECK (amount >= 0),
-    FOREIGN KEY (main_account_num) REFERENCES MainAccount(account_number),
+    FOREIGN KEY (main_account_num) REFERENCES MainAccount(id),
     FOREIGN KEY (currency_id) REFERENCES SettlementCurrency(id)
 );
 
 CREATE TYPE resident_status AS ENUM ('resident', 'non-resident');
 
-CREATE TABLE IF NOT EXISTS BockerageAccount (
-    account_number SERIAL PRIMARY KEY,
-    BIC INT NOT NULL,
+CREATE TABLE IF NOT EXISTS BrokerageAccount (
+    id SERIAL PRIMARY KEY,
+    BIC VARCHAR(11) NOT NULL,
     agreement_num INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     main_account_num INT NOT NULL,
     depository VARCHAR(100) NOT NULL,
     tax_resident_status resident_status NOT NULL,
     depot_account_num INT NOT NULL UNIQUE,
-    FOREIGN KEY (main_account_num) REFERENCES MainAccount(account_number)
+    FOREIGN KEY (main_account_num) REFERENCES MainAccount(id)
 );
 
 CREATE TABLE IF NOT EXISTS LoanAccount (
-    account_number SERIAL PRIMARY KEY,
-    BIC INT NOT NULL,
+    id SERIAL PRIMARY KEY,
+    BIC VARCHAR(11) NOT NULL,
     agreement_num INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     main_account_num INT NOT NULL,
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS LoanAccount (
     bet INT NOT NULL CHECK (bet >= 0),
     repayment_period INT NOT NULL CHECK (repayment_period > 0),
     limit_amount INT NOT NULL CHECK (limit_amount > 0),
-    FOREIGN KEY (main_account_num) REFERENCES MainAccount(account_number),
+    FOREIGN KEY (main_account_num) REFERENCES MainAccount(id),
     FOREIGN KEY (currency_id) REFERENCES SettlementCurrency(id)
 );
 
@@ -132,7 +132,7 @@ ON DebutAccount(main_account_num);
 
 
 CREATE INDEX CONCURRENTLY idx_brokerage_main_account 
-ON BockerageAccount(main_account_num);
+ON BrokerageAccount(main_account_num);
 
 
 CREATE INDEX CONCURRENTLY idx_loan_main_account 

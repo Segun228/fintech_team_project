@@ -37,7 +37,7 @@ func runMigrations(url string) error {
 			break
 		}
 
-		logrus.Info("trying to connect to db", map[string]any{"attempts left": attempts})
+		logrus.WithField("attempts left", attempts).Info("trying to connect to db")
 		time.Sleep(defaultTimeout)
 		attempts--
 	}
