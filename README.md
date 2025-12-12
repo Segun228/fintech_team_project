@@ -11,7 +11,7 @@
 ### 🗄️ **База данных**
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![SQL](https://img.shields.io/badge/SQL-4479A1?style=for-the-badge&logo=sql&logoColor=white)
-![Migrations](https://img.shields.io/badge/Миграции-FF6B6B?style=for-the-badge&logo=githubactions&logoColor=white)
+![Migrations](https://img.shields.io/badge/Migrations-FF6B6B?style=for-the-badge&logo=githubactions&logoColor=white)
 
 ### 🚀 **Бэкенд**
 ![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)
@@ -22,9 +22,6 @@
 ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 
-
-### 📝 **Документация**
-![Mermaid](https://img.shields.io/badge/Mermaid-FF6B6B?style=for-the-badge&logo=mermaid&logoColor=white)
 
 </div>
 
