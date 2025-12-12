@@ -48,59 +48,15 @@
 ## 📁 Структура проекта
 
 ```
-banking-system/
-├── README.md                          # Документация проекта
-├── crud_operations_example.sql        # Примеры CRUD операций
-├── docker-compose.yaml                # Docker Compose конфигурация
-├── ПояснительнаяЗаписка_Проект_ИАД2.docx  # Техническая документация
-│
-├── db-service/                        # Сервис базы данных на Go
-│   ├── Dockerfile                     # Docker образ для сервиса
-│   ├── go.mod                         # Go модули
-│   ├── go.sum                         # Зависимости Go
-│   ├── cmd/app/                       # Точка входа приложения
-│   ├── configs/config.yml             # Конфигурация приложения
-│   ├── internal/                      # Внутренние модули
-│   │   ├── app/                       # Инициализация приложения
-│   │   └── config/                    # Конфигурация
-│   └── pkg/postgres/                  # Пакет для работы с PostgreSQL
-│
-├── migrations/                        # Миграции базы данных
-│   ├── 20251127123059_tables_management.up.sql    # Создание таблиц
-│   └── 20251127123059_tables_management.down.sql  # Удаление таблиц
-│
-├── monitoring/                        # Мониторинг и метрики
-│   ├── grafana-dashboards/            # Дашборды Grafana
-│   ├── grafana-datasources.yml        # Источники данных Grafana
-│   └── provisioning/dashboards/       # Автоматическая настройка Grafana
-│
-├── queries/                           # SQL запросы для различных операций
-│   ├── analytics/                     # Аналитические запросы
-│   ├── analytics_advanced/            # Продвинутая аналитика
-│   ├── axchange_rate_account/         # Операции с курсами валют
-│   ├── brokerage_account/             # Операции с брокерскими счетами
-│   ├── card_account/                  # Операции с карточными счетами
-│   ├── credit_operations/             # Кредитные операции
-│   ├── individual/                    # Запросы по физическим лицам
-│   │   └── search.sql
-│   ├── main_account/                  # Основные счета
-│   │   └── account_queries.sql
-│   ├── saving_account/                # Сберегательные счета
-│   ├── settlement_account/            # Расчетные счета юр. лиц
-│   │   └── settlement.sql
-│   ├── stocks/                        # Операции с акциями
-│   ├── transactions_individual/       # Транзакции физ. лиц
-│   ├── transactions_settlement/       # Транзакции юр. лиц
-│   │   └── settlement_transactions.sql
-│   └── user_payment_fee/              # Комиссии пользователей
-│       └── user_payment_fee.sql
-│
-└── sql/                               # SQL скрипты
-    ├── tables/                        # Создание таблиц
-    │   ├── GlebushkinaTables.sql
-    │   ├── SegunTables.sql
-    │   └── mattwixTables.sql
-    └── triggers.sql                   # Триггеры базы данных
+.
+├── 📄 README.md                          - Основная документация
+├── 📄 docker-compose.yaml                - Docker Compose конфигурация
+├── 📁 db-service/                        - Go сервис базы данных
+├── 📁 migrations/                        - Миграции БД
+├── 📁 queries/                           - SQL запросы по категориям
+├── 📁 sql/                               - SQL скрипты создания схемы
+├── 📁 monitoring/                        - Мониторинг (Grafana)
+└── 📁 configs/                           - Конфигурационные файлы
 ```
 
 ## 🔧 Основные директории
@@ -127,28 +83,6 @@ docker-compose up -d
 # Применение миграций
 cat migrations/20251127123059_tables_management.up.sql | psql -U postgres -d banking_db
 ```
-
-Альтернативный, более компактный вариант:
-
-## 📁 Структура проекта
-
-```
-.
-├── 📄 README.md                          - Основная документация
-├── 📄 docker-compose.yaml                - Docker Compose конфигурация
-├── 📁 db-service/                        - Go сервис базы данных
-├── 📁 migrations/                        - Миграции БД
-├── 📁 queries/                           - SQL запросы по категориям
-├── 📁 sql/                               - SQL скрипты создания схемы
-├── 📁 monitoring/                        - Мониторинг (Grafana)
-└── 📁 configs/                           - Конфигурационные файлы
-```
-
-### Ключевые файлы:
-- **`migrations/*.up.sql`** - создание таблиц
-- **`queries/`** - бизнес-логика в SQL
-- **`db-service/`** - бэкенд на Go
-- **`docker-compose.yaml`** - развертывание
 
 
 ```mermaid
