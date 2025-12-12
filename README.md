@@ -24,6 +24,332 @@
 
 Наша команда поставила цель разработать базу данных для банковской системы, приближенную к реальной реализации. В ходе работы было определено, что проект должен не только обеспечивать создание банковских транзакций и хранение информации о них, но и реализовать отдельный функционал для юридических лиц. Командный анализ показал, что сущность юр. лица настолько отличается от сущности физ. лица, что осмысленно реализовать её отдельно.
 
+```mermaid
+erDiagram
+
+    %% ========== ОСНОВНЫЕ СУЩНОСТИ ==========
+    
+    Individual {
+        SERIAL id PK
+        VARCHAR first_name
+        VARCHAR surname
+        VARCHAR patronymic
+        VARCHAR INN UK
+        INT passport_series
+        INT passport_nums
+        VARCHAR phone_num UK
+        VARCHAR password
+        TIMESTAMP created_at
+    }
+
+    LegalEntity {
+        SERIAL id PK
+        VARCHAR name UK
+        VARCHAR INN UK
+        TIMESTAMP created_at
+        INT owner_id FK
+    }
+
+    MainAccount {
+        SERIAL id PK
+        INT user_id FK
+        VARCHAR BIC
+        INT agreement_num UK
+        TIMESTAMP created_at
+    }
+
+    %% ========== СПРАВОЧНИКИ И ТИПЫ ==========
+    
+    TransactionType {
+        SERIAL id PK
+        TIMESTAMP created_at
+        VARCHAR name
+    }
+
+    StockTypes {
+        SERIAL id PK
+        VARCHAR type_name
+    }
+
+    StockTransactionTypes {
+        SERIAL id PK
+        VARCHAR operation_name
+    }
+
+    resident_status {
+        STRING resident
+        STRING non-resident
+    }
+
+    ACCOUNT_STATUS {
+        STRING active
+        STRING frozen
+        STRING closed
+    }
+
+    %% ========== ВАЛЮТЫ И КУРСЫ ==========
+    
+    SettlementCurrency {
+        SERIAL id PK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        VARCHAR ticker UK
+        VARCHAR country
+    }
+
+    UserCurrency {
+        SERIAL id PK
+        VARCHAR ticker UK
+        VARCHAR country
+        TIMESTAMP updated_at
+    }
+
+    ExchangeRate {
+        SERIAL id PK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        INT settlement_id FK
+        DECIMAL ratio
+        INT currency_from FK
+        BOOLEAN is_current
+        INT currency_to FK
+    }
+
+    %% ========== АКЦИИ И ЦЕНЫ ==========
+    
+    Stocks {
+        SERIAL id PK
+        TIMESTAMP registered_at
+        INT stock_type FK
+        VARCHAR ticker UK
+    }
+
+    StockPrices {
+        SERIAL id PK
+        TIMESTAMP updated_at
+        INT stock_id FK
+        NUMERIC price
+    }
+
+    %% ========== СЧЕТА ФИЗИЧЕСКИХ ЛИЦ ==========
+    
+    DebutAccount {
+        SERIAL id PK
+        VARCHAR BIC
+        INT agreement_num UK
+        TIMESTAMP created_at
+        INT main_account_num FK
+        INT currency_id FK
+        VARCHAR card_num UK
+        INT card_validity
+        INT CVV
+        DECIMAL amount
+    }
+
+    BrokerageAccount {
+        SERIAL id PK
+        VARCHAR BIC
+        INT agreement_num UK
+        TIMESTAMP created_at
+        INT main_account_num FK
+        VARCHAR depository
+        resident_status tax_resident_status
+        INT depot_account_num UK
+    }
+
+    LoanAccount {
+        SERIAL id PK
+        VARCHAR BIC
+        INT agreement_num UK
+        TIMESTAMP created_at
+        INT main_account_num FK
+        INT currency_id FK
+        VARCHAR card_num UK
+        INT card_validity
+        INT CVV
+        DECIMAL bet
+        INT repayment_period
+        DECIMAL limit_amount
+    }
+
+    SavingsAccount {
+        SERIAL id PK
+        VARCHAR bic UK
+        INT agreement_num UK
+        TIMESTAMP created_at
+        INT main_account_num FK
+        INT currency_id FK
+        DECIMAL bet
+        DECIMAL amount
+    }
+
+    %% ========== СЧЕТА ЮРИДИЧЕСКИХ ЛИЦ ==========
+    
+    SettlementAccount {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT settlement_id FK
+        INT currency_id FK
+        DECIMAL balance
+        ACCOUNT_STATUS status
+    }
+
+    ForeignCurrencyAccount {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT settlement_id FK
+        DECIMAL balance
+        ACCOUNT_STATUS status
+        INT currency_id FK
+    }
+
+    CreditAccount {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT settlement_id FK
+        DECIMAL balance
+        ACCOUNT_STATUS status
+        INT currency_id FK
+    }
+
+    %% ========== КОМИССИИ И ТАРИФЫ ==========
+    
+    EntityPaymentFee {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT settlement_id FK
+        DECIMAL ratio
+        DECIMAL absolute
+        INT type_id FK
+    }
+
+    UserPaymentFee {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT trans_type FK
+        INT account_id FK
+        NUMERIC ratio
+        NUMERIC absolute
+    }
+
+    %% ========== ТРАНЗАКЦИИ И ОПЕРАЦИИ ==========
+    
+    Transactions {
+        SERIAL id PK
+        INT recipient_acc FK
+        INT sender_acc FK
+        INT type_id FK
+        TIMESTAMP date_transaction
+        VARCHAR currency
+        INT comission_id FK
+        DECIMAL amount
+    }
+
+    SettlementPaymentTransactions {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT fee_id FK
+        INT account_id FK
+        DECIMAL primary_amount
+        INT type_id FK
+    }
+
+    CreditTransactions {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT fee_id FK
+        INT account_id FK
+        DECIMAL primary_amount
+        INT type_id FK
+    }
+
+    SettlementExchangeTransactions {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT fee_id FK
+        INT rate_id FK
+        INT account_id FK
+        DECIMAL primary_amount
+        INT type_id FK
+    }
+
+    StockTransactions {
+        SERIAL id PK
+        TIMESTAMP created_at
+        INT stock_id FK
+        INT account_id FK
+        INT operation_type_id FK
+        NUMERIC value
+        INT stock_price_id FK
+    }
+
+    UserStock {
+        SERIAL id PK
+        INT transact_id FK
+        INT brock_acc_num FK
+    }
+
+    %% ========== ОСНОВНЫЕ СВЯЗИ ==========
+    
+    Individual ||--o{ LegalEntity : "владеет"
+    Individual ||--o{ MainAccount : "имеет"
+    
+    MainAccount ||--o{ DebutAccount : "содержит"
+    MainAccount ||--o{ BrokerageAccount : "содержит"
+    MainAccount ||--o{ LoanAccount : "содержит"
+    MainAccount ||--o{ SavingsAccount : "содержит"
+    
+    LegalEntity ||--o{ SettlementAccount : "имеет"
+    LegalEntity ||--o{ ForeignCurrencyAccount : "имеет"
+    LegalEntity ||--o{ CreditAccount : "имеет"
+    LegalEntity ||--o{ EntityPaymentFee : "устанавливает тарифы"
+    LegalEntity ||--o{ ExchangeRate : "устанавливает курсы"
+    
+    MainAccount ||--o{ UserPaymentFee : "имеет тарифы"
+    MainAccount ||--o{ Transactions : "как отправитель"
+    MainAccount ||--o{ Transactions : "как получатель"
+    
+    TransactionType ||--o{ EntityPaymentFee : "для типа"
+    TransactionType ||--o{ UserPaymentFee : "для типа"
+    TransactionType ||--o{ Transactions : "определяет тип"
+    TransactionType ||--o{ SettlementPaymentTransactions : "определяет тип"
+    TransactionType ||--o{ CreditTransactions : "определяет тип"
+    TransactionType ||--o{ SettlementExchangeTransactions : "определяет тип"
+    
+    EntityPaymentFee ||--o{ SettlementPaymentTransactions : "в транзакциях"
+    EntityPaymentFee ||--o{ CreditTransactions : "в транзакциях"
+    EntityPaymentFee ||--o{ SettlementExchangeTransactions : "в транзакциях"
+    
+    UserPaymentFee ||--o{ Transactions : "с комиссией"
+    
+    SettlementAccount ||--o{ SettlementPaymentTransactions : "имеет транзакции"
+    CreditAccount ||--o{ CreditTransactions : "имеет транзакции"
+    ForeignCurrencyAccount ||--o{ SettlementExchangeTransactions : "имеет транзакции"
+    
+    ExchangeRate ||--o{ SettlementExchangeTransactions : "по курсу"
+    
+    SettlementCurrency ||--o{ ExchangeRate : "как исходная валюта"
+    SettlementCurrency ||--o{ ExchangeRate : "как целевая валюта"
+    SettlementCurrency ||--o{ DebutAccount : "валюта счета"
+    SettlementCurrency ||--o{ LoanAccount : "валюта счета"
+    SettlementCurrency ||--o{ SettlementAccount : "валюта счета"
+    SettlementCurrency ||--o{ ForeignCurrencyAccount : "валюта счета"
+    SettlementCurrency ||--o{ CreditAccount : "валюта счета"
+    
+    UserCurrency ||--o{ SavingsAccount : "валюта счета"
+    
+    StockTypes ||--o{ Stocks : "классифицирует"
+    Stocks ||--o{ StockPrices : "имеет цены"
+    Stocks ||--o{ StockTransactions : "в операциях"
+    
+    StockPrices ||--o{ StockTransactions : "по цене"
+    StockTransactionTypes ||--o{ StockTransactions : "тип операции"
+    
+    SavingsAccount ||--o{ StockTransactions : "совершает операции"
+    StockTransactions ||--o{ UserStock : "записывается в"
+    BrokerageAccount ||--o{ UserStock : "хранит акции"
+```
+
 <h2>Основные направления использования:</h2>
 
 <h3>1. CRUD операции </h3> 
