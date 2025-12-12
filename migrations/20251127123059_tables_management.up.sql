@@ -407,3 +407,332 @@ CREATE INDEX idx_payment_fee_settlement_type ON EntityPaymentFee(settlement_id, 
 CREATE INDEX idx_payment_fee_type ON EntityPaymentFee(type_id);
 
 CREATE INDEX idx_exchange_transactions_created ON SettlementExchangeTransactions(created_at);
+
+-- =========================================================================
+-- СИДДЕР ДАННЫХ С ПРОВЕРКОЙ СУЩЕСТВОВАНИЯ ДАННЫХ (PostgreSQL)
+-- * В этом блоке PL/pgSQL используются переменные, объявленные через DECLARE.
+-- * Это корректно работает в Go-миграторе.
+-- =========================================================================
+
+DO $$
+DECLARE
+    -- Определяем константы для дат внутри блока PL/pgSQL
+    start_date CONSTANT TIMESTAMP := '2024-01-01 00:00:00';
+    end_date CONSTANT TIMESTAMP := '2025-01-01 00:00:00';
+BEGIN
+
+    -- Проверка: если в одной из первых справочных таблиц (TransactionType) нет данных,
+    -- то запускаем сидирование всего остального.
+    IF NOT EXISTS (SELECT 1 FROM TransactionType) THEN
+
+        RAISE NOTICE '--- НАЧАЛО СИДИРОВАНИЯ БАЗЫ ДАННЫХ ---';
+
+        --------------------------------------------------------------------------------
+        -- 1. Справочные таблицы
+        --------------------------------------------------------------------------------
+
+        -- TransactionType (Типы транзакций)
+        INSERT INTO TransactionType (name) VALUES
+        ('Пополнение счета'),
+        ('Перевод другому клиенту'),
+        ('Оплата услуг'),
+        ('Снятие наличных'),
+        ('Покупка ценной бумаги'),
+        ('Продажа ценной бумаги');
+
+        -- SettlementCurrency (Валюта расчетов)
+        INSERT INTO SettlementCurrency (ticker, country) VALUES
+        ('RUB', 'Россия'),
+        ('USD', 'США'),
+        ('EUR', 'Еврозона'),
+        ('CNY', 'Китай'),
+        ('GBP', 'Великобритания');
+
+        -- StockTypes (Типы акций)
+        INSERT INTO StockTypes (type_name) VALUES
+        ('Акция'),
+        ('Облигация'),
+        ('Фонд ETF'),
+        ('Опцион');
+
+        -- StockTransactionTypes (Типы операций с акциями)
+        INSERT INTO StockTransactionTypes (operation_name) VALUES
+        ('Покупка'),
+        ('Продажа');
+
+        -- UserCurrency (Валюта пользователя)
+        INSERT INTO UserCurrency (ticker, country) VALUES
+        ('RUB', 'Россия'),
+        ('USD', 'США'),
+        ('EUR', 'Еврозона');
+
+        --------------------------------------------------------------------------------
+        -- 2. Основные сущности (50 Физ. лиц, 10 Юр. лиц)
+        --------------------------------------------------------------------------------
+
+        -- Individual (50 записей)
+        INSERT INTO Individual (first_name, surname, patronymic, INN, passport_series, passport_nums, phone_num, password)
+        SELECT
+            CASE WHEN i % 5 = 0 THEN 'Иван' WHEN i % 5 = 1 THEN 'Мария' WHEN i % 5 = 2 THEN 'Петр' WHEN i % 5 = 3 THEN 'Анна' ELSE 'Дмитрий' END || i,
+            CASE WHEN i % 5 = 0 THEN 'Иванов' WHEN i % 5 = 1 THEN 'Смирнова' WHEN i % 5 = 2 THEN 'Козлов' WHEN i % 5 = 3 THEN 'Попова' ELSE 'Соколов' END || i,
+            CASE WHEN i % 3 = 0 THEN 'Алексеевич' WHEN i % 3 = 1 THEN 'Сергеевна' ELSE 'Владимирович' END,
+            LPAD((100000000000 + i * 123)::text, 12, '0'), -- INN (12 digits)
+            (i % 90) + 1000, -- Passport Series
+            (100000 + i * 456), -- Passport Nums
+            '+79' || LPAD((900000000 + i * 1000)::text, 9, '0'), -- Phone
+            MD5('pass' || i)
+        FROM GENERATE_SERIES(1, 50) AS i;
+
+        -- LegalEntity (10 записей)
+        INSERT INTO LegalEntity (name, INN, owner_id)
+        SELECT
+            'ООО "' || CASE WHEN i % 2 = 0 THEN 'Инвест' ELSE 'Торг' END || 'Плюс' || i || '"',
+            LPAD((500000000000 + i * 987)::text, 12, '0'), -- INN
+            (i % 50) + 1
+        FROM GENERATE_SERIES(1, 10) AS i;
+
+        --------------------------------------------------------------------------------
+        -- 3. Акционные инструменты (20 записей)
+        --------------------------------------------------------------------------------
+
+        -- Stocks (20 записей)
+        INSERT INTO Stocks (stock_type, ticker)
+        SELECT
+            (i % 3) + 1,
+            CASE i % 4
+                WHEN 0 THEN 'SBER'
+                WHEN 1 THEN 'YNDX'
+                WHEN 2 THEN 'GAZP'
+                ELSE 'VTBR'
+            END || i
+        FROM GENERATE_SERIES(1, 20) AS i;
+
+        -- StockPrices (100 записей - 5 цен для каждой акции)
+        INSERT INTO StockPrices (stock_id, price, updated_at)
+        SELECT
+            s.id,
+            (RANDOM() * 5000 + 10)::NUMERIC(20, 4),
+            NOW() - ('30 days'::interval * RANDOM()) AS updated_at
+        FROM Stocks s, GENERATE_SERIES(1, 5) AS i
+        ORDER BY s.id, updated_at;
+
+        --------------------------------------------------------------------------------
+        -- 4. Основные счета и их конфигурация
+        --------------------------------------------------------------------------------
+
+        -- MainAccount (50 записей, 1 на каждого физ. лица)
+        INSERT INTO MainAccount (user_id, BIC, agreement_num)
+        SELECT
+            i,
+            LPAD(((1000000000 + i * 1) % 999999999)::text, 11, '0'),
+            1000 + i
+        FROM GENERATE_SERIES(1, 50) AS i;
+
+        -- UserPaymentFee (150 записей - 3 типа комиссии на каждого из 50 MainAccount)
+        INSERT INTO UserPaymentFee (trans_type, account_id, ratio, absolute)
+        SELECT
+            (i % 3) + 1,
+            (i % 50) + 1,
+            (RANDOM() * 0.005)::NUMERIC(5, 5),
+            (CASE WHEN RANDOM() > 0.5 THEN 100 ELSE 0 END)::NUMERIC(15, 2)
+        FROM GENERATE_SERIES(1, 150) AS i;
+
+        -- EntityPaymentFee (30 записей - 3 типа комиссии на каждого из 10 LegalEntity)
+        INSERT INTO EntityPaymentFee (settlement_id, ratio, absolute, type_id)
+        SELECT
+            (i % 10) + 1,
+            (RANDOM() * 0.01)::DECIMAL(15, 5),
+            (RANDOM() * 500)::DECIMAL(15, 2),
+            (i % 3) + 1
+        FROM GENERATE_SERIES(1, 30) AS i;
+
+        --------------------------------------------------------------------------------
+        -- 5. Специализированные счета Физ. лиц (50 записей каждого типа)
+        --------------------------------------------------------------------------------
+
+        -- DebutAccount
+        INSERT INTO DebutAccount (BIC, agreement_num, main_account_num, currency_id, card_num, card_validity, CVV, amount)
+        SELECT
+            LPAD(((2000000000 + i * 1) % 999999999)::text, 11, '0'),
+            2000 + i,
+            i,
+            (i % 3) + 1,
+            LPAD((5000000000000000 + i * 100)::text, 16, '0'),
+            (i % 12) + 2026,
+            (i % 899) + 100,
+            (RANDOM() * 100000 + 500)::DECIMAL(15, 2)
+        FROM GENERATE_SERIES(1, 50) AS i;
+
+        -- BrokerageAccount
+        INSERT INTO BrokerageAccount (BIC, agreement_num, main_account_num, depository, tax_resident_status, depot_account_num)
+        SELECT
+            LPAD(((3000000000 + i * 1) % 999999999)::text, 11, '0'),
+            3000 + i,
+            i,
+            'Депо' || (i % 5) + 1,
+            CASE WHEN i % 10 = 0 THEN 'non-resident' ELSE 'resident' END::resident_status,
+            500000 + i
+        FROM GENERATE_SERIES(1, 50) AS i;
+
+        -- LoanAccount
+        INSERT INTO LoanAccount (BIC, agreement_num, main_account_num, currency_id, card_num, card_validity, CVV, bet, repayment_period, limit_amount)
+        SELECT
+            LPAD(((4000000000 + i * 1) % 999999999)::text, 11, '0'),
+            4000 + i,
+            i,
+            1,
+            LPAD((6000000000000000 + i * 100)::text, 16, '0'),
+            (i % 12) + 2026,
+            (i % 899) + 100,
+            (RANDOM() * 10 + 5)::DECIMAL(5, 2),
+            (i % 24) + 12,
+            (RANDOM() * 500000 + 10000)::DECIMAL(15, 2)
+        FROM GENERATE_SERIES(1, 50) AS i;
+
+        -- SavingsAccount
+        INSERT INTO SavingsAccount (bic, agreement_num, main_account_num, currency_id, bet, amount)
+        SELECT
+            LPAD(((5000000000 + i * 1) % 999999999)::text, 11, '0'),
+            5000 + i,
+            i,
+            (i % 3) + 1,
+            (RANDOM() * 7 + 1)::DECIMAL(5, 2),
+            (RANDOM() * 50000 + 1000)::DECIMAL(15, 2)
+        FROM GENERATE_SERIES(1, 50) AS i;
+
+
+        --------------------------------------------------------------------------------
+        -- 6. Специализированные счета Юр. лиц (10 записей каждого типа)
+        --------------------------------------------------------------------------------
+
+        -- SettlementAccount
+        INSERT INTO SettlementAccount (settlement_id, currency_id, balance, status)
+        SELECT
+            i,
+            1, -- RUB
+            (RANDOM() * 1000000 + 50000)::DECIMAL(15, 2),
+            CASE WHEN i % 10 = 0 THEN 'closed'::ACCOUNT_STATUS ELSE 'active'::ACCOUNT_STATUS END
+        FROM GENERATE_SERIES(1, 10) AS i;
+
+        -- ForeignCurrencyAccount
+        INSERT INTO ForeignCurrencyAccount (settlement_id, currency_id, balance, status)
+        SELECT
+            i,
+            (i % 2) + 2, -- USD(2) или EUR(3)
+            (RANDOM() * 50000 + 100)::DECIMAL(15, 2),
+            'active'::ACCOUNT_STATUS
+        FROM GENERATE_SERIES(1, 10) AS i;
+
+        -- CreditAccount
+        INSERT INTO CreditAccount (settlement_id, currency_id, balance, status)
+        SELECT
+            i,
+            1, -- RUB
+            (RANDOM() * 200000 + 10000)::DECIMAL(15, 2),
+            'active'::ACCOUNT_STATUS
+        FROM GENERATE_SERIES(1, 10) AS i;
+
+
+        --------------------------------------------------------------------------------
+        -- 7. Курсы обмена (ExchangeRate)
+        --------------------------------------------------------------------------------
+
+        -- ExchangeRate (RUB/USD)
+        INSERT INTO ExchangeRate (settlement_id, ratio, currency_from, currency_to, is_current, created_at)
+        SELECT 
+            (i % 5) + 1, 
+            (70 + RANDOM() * 30)::DECIMAL(15, 5), 
+            1, 2, 
+            (i = 1), -- Только i=1 будет TRUE, остальные FALSE
+            NOW() - (i * '1 day'::interval)
+        FROM GENERATE_SERIES(1, 5) AS i;
+
+        -- RUB -> EUR (1 -> 3). Генерируем 5 записей, только 1-я активна
+        INSERT INTO ExchangeRate (settlement_id, ratio, currency_from, currency_to, is_current, created_at)
+        SELECT 
+            (i % 5) + 1, 
+            (80 + RANDOM() * 30)::DECIMAL(15, 5), 
+            1, 3, 
+            (i = 1), 
+            NOW() - (i * '1 day'::interval)
+        FROM GENERATE_SERIES(1, 5) AS i;
+
+        --------------------------------------------------------------------------------
+        -- 8. Транзакционные данные (более 2000 записей)
+        --------------------------------------------------------------------------------
+
+        -- Transactions (Транзакции Физ. лиц - 2000 записей)
+        INSERT INTO Transactions (recipient_acc, sender_acc, type_id, currency, comission_id, amount, date_transaction)
+        SELECT
+            (i % 50) + 1,
+            ((i + 1) % 50) + 1,
+            (i % 3) + 1,
+            CASE (i % 3) WHEN 0 THEN 'RUB' WHEN 1 THEN 'USD' ELSE 'EUR' END,
+            (SELECT id FROM UserPaymentFee ORDER BY RANDOM() LIMIT 1),
+            (RANDOM() * 5000 + 100)::DECIMAL(15, 2),
+            start_date + (i * '1 minute'::interval)
+        FROM GENERATE_SERIES(1, 2000) AS i;
+
+
+        -- SettlementPaymentTransactions (Платежи Юр. лиц - 500 записей)
+        INSERT INTO SettlementPaymentTransactions (fee_id, account_id, primary_amount, type_id, created_at)
+        SELECT
+            (i % 30) + 1,
+            (i % 10) + 1,
+            (RANDOM() * 50000 + 1000)::DECIMAL(11, 3),
+            (i % 3) + 1,
+            start_date + (i * '2 minutes'::interval)
+        FROM GENERATE_SERIES(1, 500) AS i;
+
+
+        -- CreditTransactions (Кредитные транзакции Юр. лиц - 200 записей)
+        INSERT INTO CreditTransactions (fee_id, account_id, primary_amount, type_id, created_at)
+        SELECT
+            (i % 30) + 1,
+            (i % 10) + 1,
+            (RANDOM() * 10000 + 100)::DECIMAL(11, 3),
+            (i % 3) + 1,
+            start_date + (i * '5 minutes'::interval)
+        FROM GENERATE_SERIES(1, 200) AS i;
+
+
+        -- SettlementExchangeTransactions (Обменные транзакции Юр. лиц - 100 записей)
+        INSERT INTO SettlementExchangeTransactions (fee_id, rate_id, account_id, primary_amount, type_id, created_at)
+        SELECT
+            (i % 30) + 1,
+            (i % 10) + 1,
+            (i % 10) + 1,
+            (RANDOM() * 1000 + 10)::DECIMAL(11, 3),
+            (i % 3) + 1,
+            start_date + (i * '10 minutes'::interval)
+        FROM GENERATE_SERIES(1, 100) AS i;
+
+
+        -- StockTransactions (Транзакции с акциями - 400 записей: покупка/продажа)
+        INSERT INTO StockTransactions (stock_id, account_id, operation_type_id, value, stock_price_id, created_at)
+        SELECT
+            (i % 20) + 1,
+            (i % 50) + 1,
+            (i % 2) + 1,
+            (RANDOM() * 100 + 1)::NUMERIC(20, 4),
+            (SELECT id FROM StockPrices WHERE stock_id = (i % 20) + 1 ORDER BY updated_at DESC LIMIT 1),
+            start_date + (i * '15 minutes'::interval)
+        FROM GENERATE_SERIES(1, 400) AS i;
+
+
+        -- UserStock (Владение акциями)
+        INSERT INTO UserStock (transact_id, brock_acc_num)
+        SELECT
+            st.id,
+            st.account_id
+        FROM StockTransactions st
+        WHERE st.operation_type_id = 1; -- Только покупки
+
+        RAISE NOTICE '--- СИДИРОВАНИЕ УСПЕШНО ЗАВЕРШЕНО ---';
+
+    ELSE
+        RAISE NOTICE '--- СИДИРОВАНИЕ ПРОПУЩЕНО: ДАННЫЕ УЖЕ СУЩЕСТВУЮТ ---';
+    END IF;
+
+END
+$$;
